@@ -1,0 +1,10 @@
+.env
+__pycache__
+
+data/
+ll_cnndm_candidates_5/
+ll_nq_candidates_8
+
+nq_*.jsonl
+hotpotqa_*.jsonl
+xsum_*.jsonl

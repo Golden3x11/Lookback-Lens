@@ -119,8 +119,8 @@ def load_jsonl(file_path, parallel=False, total_shard=8, shard_id=0, debug=False
             data_indices.append(data_index)
             data_index += 1
         if debug:
-            data = data[:10]
-            data_indices = data_indices[:10]
+            data = data[:3]
+            data_indices = data_indices[:3]
         if subsample is not None:
             # select data if idx%subsample == 0
             data = [data[i] for i in range(len(data)) if i % subsample == 0]
@@ -174,6 +174,9 @@ def build_prompt(context, response, data_type='cnndm', llama2_tokenizer=None):
         input_text_prompt = truncate_message(prompt, response, llama2_tokenizer)
     else:
         input_text_prompt = prompt + response
+
+    print(f"Prompt: {input_text_prompt}")
+    print(f'Response: {response}')
     return input_text_prompt
 
 
@@ -305,6 +308,8 @@ if __name__ == "__main__":
     time_decoding = 0.0
     for idx in tqdm(range(len(list_data_dict))):
         sample = list_data_dict[idx]
+
+        print(f'Sample= {sample}')
         if sample['data_index'] in done_indices:
             continue
         
@@ -328,6 +333,8 @@ if __name__ == "__main__":
             generate_kwargs['temperature'] = temperature
             generate_kwargs['do_sample'] = do_sample
 
+
+        print(generate_kwargs)
         model_completion, gen_seq = llm.generate(
             input_text, guiding_classifier=guiding_classifier, conversion_matrix=conversion_matrix, 
             extra_prompt_length=extra_prompt_length,
