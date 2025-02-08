@@ -343,6 +343,7 @@ if __name__ == "__main__":
 
 
     output_path =f'{args.output_path}_{args.start}_{args.end}.jsonl'
+    output_path_time_per_chunk = f'{args.output_path}_{args.start}_{args.end}_time_per_chunk.jsonl'
 
     done_indices = {}
     if os.path.exists(output_path):
@@ -351,6 +352,14 @@ if __name__ == "__main__":
             done_indices = json.load(f)
     else:
         done_indices = {}
+
+    done_time_per_chunk = {}
+    if os.path.exists(output_path_time_per_chunk):
+        print("Try to resume from the existing time per chunj file.")
+        with open(output_path_time_per_chunk, 'r') as f:
+            done_time_per_chunk = json.load(f)
+    else:
+        done_time_per_chunk = {}
 
     if args.data_type == 'mt_bench':
         pass
@@ -398,7 +407,7 @@ if __name__ == "__main__":
 
 
         print(generate_kwargs)
-        model_completion, gen_seq = llm.generate(
+        model_completion, gen_seq, time_per_chunk = llm.generate(
             input_text, guiding_classifier=guiding_classifier, conversion_matrix=conversion_matrix, 
             extra_prompt_length=extra_prompt_length,
             feat_layer=args.feat_layer,
@@ -413,9 +422,13 @@ if __name__ == "__main__":
 
         cropped_gen_seq = llm.tokenizer(model_completion)['input_ids'][1:]
         done_indices[str(idx)] = cropped_model_completion.strip()
+        done_time_per_chunk[str(idx)] = time_per_chunk
 
         with open(output_path, 'w') as fw:
             json.dump(done_indices, fw, ensure_ascii=False, indent=4)
+
+        with open(output_path_time_per_chunk, 'w') as fw:
+            json.dump(done_time_per_chunk, fw, ensure_ascii=False, indent=4)
 
     resps = {}
     with open(output_path, 'r') as f:

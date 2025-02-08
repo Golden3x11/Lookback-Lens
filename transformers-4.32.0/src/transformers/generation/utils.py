@@ -20,6 +20,7 @@ import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 from scipy.stats import entropy
+from time import perf_counter
 
 import torch
 import torch.distributed as dist
@@ -253,6 +254,7 @@ class SampleDecoderOnlyOutput(ModelOutput):
     hidden_states: Optional[Tuple[Tuple[torch.FloatTensor]]] = None
     critical_layer_dist: Optional[Dict[int, int]] = None
     past_key_values: Optional[Tuple[torch.FloatTensor]] = None
+    time_per_chunk: Optional[List[float]] = None
 
 
 @dataclass
@@ -3021,10 +3023,15 @@ class GenerationMixin:
         else:
             tokenizer = guiding_classifier['tokenizer']
             nli_model = guiding_classifier['model']
+
+        time_per_chunk = []
+        
         for _ in range(num_chucks):
             candidates = []
             candidates_attns = []
             candidates_past_key_values = []
+
+            start_time = perf_counter()
             for _ in range(num_candidates):
                 input_length = input_ids.shape[-1]
                 stopping_criteria[0].max_length = input_length + chunk_size
@@ -3125,6 +3132,9 @@ class GenerationMixin:
                 scores = attention_classifier.predict_proba(candidates_attns)[:, 1]
             best_candidate = candidates[scores.argmax()]
             
+            total_time = perf_counter() - start_time
+            time_per_chunk.append(total_time)
+            
             input_ids = torch.cat([input_ids, best_candidate.detach().unsqueeze(0)], dim=-1)
             model_kwargs['attention_mask'] = torch.ones(input_ids.shape, device=input_ids.device)
             model_kwargs['past_key_values'] = candidates_past_key_values[scores.argmax()]
@@ -3147,6 +3157,7 @@ class GenerationMixin:
                 return SampleDecoderOnlyOutput(
                     sequences=input_ids,
                     scores=scores,
+                    time_per_chunk=time_per_chunk,
                 )
         else:
             return input_ids
