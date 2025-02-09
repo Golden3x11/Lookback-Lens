@@ -343,7 +343,7 @@ if __name__ == "__main__":
 
 
     output_path =f'{args.output_path}_{args.start}_{args.end}.jsonl'
-    output_path_time_per_chunk = f'{args.output_path}_{args.start}_{args.end}_time_per_chunk.jsonl'
+    output_path_time_per_chunk = f'{args.output_path}_{args.start}_{args.end}_time_per_chunk.pt'
 
     done_indices = {}
     if os.path.exists(output_path):
@@ -353,11 +353,9 @@ if __name__ == "__main__":
     else:
         done_indices = {}
 
-    done_time_per_chunk = {}
     if os.path.exists(output_path_time_per_chunk):
-        print("Try to resume from the existing time per chunj file.")
-        with open(output_path_time_per_chunk, 'r') as f:
-            done_time_per_chunk = json.load(f)
+        print("Try to resume from the existing time per chunk file.")
+        done_time_per_chunk = torch.load(output_path_time_per_chunk)
     else:
         done_time_per_chunk = {}
 
@@ -427,8 +425,7 @@ if __name__ == "__main__":
         with open(output_path, 'w') as fw:
             json.dump(done_indices, fw, ensure_ascii=False, indent=4)
 
-        with open(output_path_time_per_chunk, 'w') as fw:
-            json.dump(done_time_per_chunk, fw, ensure_ascii=False, indent=4)
+        torch.save(done_time_per_chunk, output_path_time_per_chunk)
 
     resps = {}
     with open(output_path, 'r') as f:

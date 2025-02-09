@@ -3027,11 +3027,12 @@ class GenerationMixin:
         time_per_chunk = []
         
         for _ in range(num_chucks):
+            start_time = perf_counter()
+
             candidates = []
             candidates_attns = []
             candidates_past_key_values = []
 
-            start_time = perf_counter()
             for _ in range(num_candidates):
                 input_length = input_ids.shape[-1]
                 stopping_criteria[0].max_length = input_length + chunk_size
@@ -3132,10 +3133,11 @@ class GenerationMixin:
                 scores = attention_classifier.predict_proba(candidates_attns)[:, 1]
             best_candidate = candidates[scores.argmax()]
             
+            input_ids = torch.cat([input_ids, best_candidate.detach().unsqueeze(0)], dim=-1)
+
             total_time = perf_counter() - start_time
             time_per_chunk.append(total_time)
-            
-            input_ids = torch.cat([input_ids, best_candidate.detach().unsqueeze(0)], dim=-1)
+
             model_kwargs['attention_mask'] = torch.ones(input_ids.shape, device=input_ids.device)
             model_kwargs['past_key_values'] = candidates_past_key_values[scores.argmax()]
             # remove garbage
