@@ -93,7 +93,7 @@ class LLM:
                                         extra_prompt_length=extra_prompt_length,
                                         guiding_classifier=guiding_classifier, chunk_size=chunk_size, 
                                         num_candidates=num_candidates, conversion_matrix=conversion_matrix, **kwargs,)
-            sequences, scores = outputs.sequences, outputs.scores
+            sequences, scores, time_per_chunk = outputs.sequences, outputs.scores, outputs.time_per_chunk
 
             # skip the tokens in the input prompt
             gen_sequences = sequences[:, input_ids.shape[-1]:][0, :]
@@ -114,6 +114,6 @@ class LLM:
         if self.device:
             torch.cuda.empty_cache()
         if not return_attentions:
-            return output_str, gen_arr
+            return output_str, gen_arr, time_per_chunk
         else:
-            return output_str, outputs.attentions, gen_arr
+            return output_str, outputs.attentions, gen_arr, time_per_chunk
